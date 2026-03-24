@@ -1,0 +1,40 @@
+version: 2
+
+project_name: clasp
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./main.go
+    binary: clasp
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/donnycrash/clasp/cmd.Version=v{{.Version}} -X github.com/donnycrash/clasp/cmd.Commit={{.Commit}}
+
+archives:
+  - name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE*
+      - README*
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+release:
+  github:
+    owner: donnycrash
+    name: clasp
