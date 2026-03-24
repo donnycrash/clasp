@@ -24,8 +24,8 @@ func TestDefault(t *testing.T) {
 	if cfg.Auth.Provider != "github" {
 		t.Errorf("Auth.Provider: got %q, want %q", cfg.Auth.Provider, "github")
 	}
-	if cfg.Auth.GitHub.ClientID != "" {
-		t.Errorf("Auth.GitHub.ClientID: got %q, want %q", cfg.Auth.GitHub.ClientID, "")
+	if cfg.Auth.GitHub.ClientID != "Ov23lixHlMGjU5wU24b1" {
+		t.Errorf("Auth.GitHub.ClientID: got %q, want %q", cfg.Auth.GitHub.ClientID, "Ov23lixHlMGjU5wU24b1")
 	}
 
 	// Redaction
