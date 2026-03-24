@@ -69,6 +69,9 @@ func Default() *Config {
 		ClaudeDataDir:    "~/.claude",
 		Auth: AuthConfig{
 			Provider: "github",
+			GitHub: GitHubAuthConfig{
+				ClientID: "Ov23lixHlMGjU5wU24b1",
+			},
 		},
 		Redaction: RedactionConfig{
 			ProjectPath:    "hash",
