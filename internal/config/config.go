@@ -22,9 +22,10 @@ type Config struct {
 
 // AuthConfig configures the authentication provider and its settings.
 type AuthConfig struct {
-	Provider string           `yaml:"provider"`
-	GitHub   GitHubAuthConfig `yaml:"github"`
-	APIKey   APIKeyAuthConfig `yaml:"apikey"`
+	Provider string              `yaml:"provider"`
+	GitHub   GitHubAuthConfig    `yaml:"github"`
+	APIKey   APIKeyAuthConfig    `yaml:"apikey"`
+	Supabase SupabaseAuthConfig  `yaml:"supabase"`
 }
 
 // GitHubAuthConfig holds GitHub OAuth configuration.
@@ -34,6 +35,12 @@ type GitHubAuthConfig struct {
 
 // APIKeyAuthConfig holds API key authentication configuration.
 type APIKeyAuthConfig struct{}
+
+// SupabaseAuthConfig holds Supabase OAuth configuration.
+type SupabaseAuthConfig struct {
+	URL     string `yaml:"url"`      // Supabase project URL (e.g. https://xxxx.supabase.co)
+	AnonKey string `yaml:"anon_key"` // Supabase anon/public key
+}
 
 // RedactionConfig controls what fields are redacted and how.
 type RedactionConfig struct {
