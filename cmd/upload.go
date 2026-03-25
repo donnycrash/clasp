@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/donnycrash/clasp/internal/auth"
@@ -15,6 +17,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var dryRun bool
+
 var uploadCmd = &cobra.Command{
 	Use:   "upload",
 	Short: "Collect, redact, and upload Claude usage data",
@@ -23,6 +27,7 @@ var uploadCmd = &cobra.Command{
 }
 
 func init() {
+	uploadCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Show the payload that would be uploaded without sending it")
 	rootCmd.AddCommand(uploadCmd)
 }
 
@@ -34,30 +39,41 @@ func runUpload(cmd *cobra.Command, args []string) error {
 	}
 	slog.Info("config loaded", "path", config.ConfigPath())
 
-	return doUpload(cfg)
+	return doUpload(cfg, dryRun)
 }
 
 // doUpload performs the upload pipeline and is shared by both the upload and run commands.
-func doUpload(cfg *config.Config) error {
+// When dryRun is true, the payload JSON is written to stdout and no upload or watermark update occurs.
+func doUpload(cfg *config.Config, dryRun ...bool) error {
+	isDryRun := len(dryRun) > 0 && dryRun[0]
+
 	// 2. Check auth — get identity and auth header.
-	provider, err := createProvider(cfg)
-	if err != nil {
-		return fmt.Errorf("creating auth provider: %w", err)
-	}
+	//    Dry-run skips auth entirely since nothing is uploaded.
+	var username, authHeader string
+	if isDryRun {
+		username = "(dry-run)"
+		slog.Info("dry-run mode, skipping authentication")
+	} else {
+		provider, err := createProvider(cfg)
+		if err != nil {
+			return fmt.Errorf("creating auth provider: %w", err)
+		}
 
-	if !provider.IsAuthenticated() {
-		return fmt.Errorf("not authenticated; run 'clasp auth login' first")
-	}
+		if !provider.IsAuthenticated() {
+			return fmt.Errorf("not authenticated; run 'clasp auth login' first")
+		}
 
-	identity, err := provider.GetIdentity()
-	if err != nil {
-		return fmt.Errorf("getting identity: %w", err)
-	}
-	slog.Info("authenticated", "provider", identity.Provider, "username", identity.Username)
+		identity, err := provider.GetIdentity()
+		if err != nil {
+			return fmt.Errorf("getting identity: %w", err)
+		}
+		slog.Info("authenticated", "provider", identity.Provider, "username", identity.Username)
+		username = identity.Username
 
-	authHeader, err := provider.GetAuthHeader()
-	if err != nil {
-		return fmt.Errorf("getting auth header: %w", err)
+		authHeader, err = provider.GetAuthHeader()
+		if err != nil {
+			return fmt.Errorf("getting auth header: %w", err)
+		}
 	}
 
 	// 3. Load watermark.
@@ -92,10 +108,22 @@ func doUpload(cfg *config.Config) error {
 
 	// 6. Build payload.
 	payload := uploader.BuildPayload(data, uploader.Identity{
-		Username: identity.Username,
+		Username: username,
 	}, Version)
 
-	// 7. Batch sessions.
+	// 7. Dry-run: print the payload and exit without uploading.
+	if isDryRun {
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(payload); err != nil {
+			return fmt.Errorf("encoding payload: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "\nDry run: %d session(s), %d stats day(s). Nothing was uploaded.\n",
+			len(payload.Sessions), countStatsDays(payload.StatsSummary))
+		return nil
+	}
+
+	// 8. Batch sessions.
 	batchSize := cfg.Upload.BatchSize
 	if batchSize <= 0 {
 		batchSize = 50
@@ -104,7 +132,7 @@ func doUpload(cfg *config.Config) error {
 	batches := batchPayloads(payload, batchSize)
 	slog.Info("batched sessions", "total_sessions", len(payload.Sessions), "batches", len(batches))
 
-	// 8. Upload each batch.
+	// 9. Upload each batch.
 	timeout, err := time.ParseDuration(cfg.Upload.Timeout)
 	if err != nil {
 		timeout = 30 * time.Second
@@ -129,13 +157,13 @@ func doUpload(cfg *config.Config) error {
 		slog.Info("batch uploaded successfully", "batch", i+1)
 	}
 
-	// 9. Update watermark on success.
+	// 10. Update watermark on success.
 	wm.MarkSessionsUploaded(uploadedSessionIDs)
 	if data.Stats != nil && data.Stats.PeriodEnd != "" {
 		wm.UpdateStatsDate(data.Stats.PeriodEnd)
 	}
 
-	// 10. Save watermark.
+	// 11. Save watermark.
 	if err := wm.Save(wmPath); err != nil {
 		return fmt.Errorf("saving watermark: %w", err)
 	}
@@ -157,6 +185,14 @@ func createProvider(cfg *config.Config) (auth.Provider, error) {
 	default:
 		return nil, fmt.Errorf("unknown auth provider: %s", cfg.Auth.Provider)
 	}
+}
+
+// countStatsDays returns the number of daily activity entries in the stats summary.
+func countStatsDays(stats *uploader.PayloadStats) int {
+	if stats == nil {
+		return 0
+	}
+	return len(stats.DailyActivity)
 }
 
 // batchPayloads splits a single payload into multiple payloads, each containing
