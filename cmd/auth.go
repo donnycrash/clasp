@@ -35,7 +35,7 @@ var authLogoutCmd = &cobra.Command{
 }
 
 func init() {
-	authLoginCmd.Flags().StringVar(&authProviderFlag, "provider", "", "auth provider to use (github, apikey)")
+	authLoginCmd.Flags().StringVar(&authProviderFlag, "provider", "", "auth provider to use (github, apikey, supabase)")
 	authCmd.AddCommand(authLoginCmd)
 	authCmd.AddCommand(authStatusCmd)
 	authCmd.AddCommand(authLogoutCmd)

@@ -70,8 +70,9 @@ clasp install
 | `clasp sync` | Pull latest org configs from shared Git repo |
 | `clasp sync --diff` | Preview what would change without applying |
 | `clasp run` | Upload + sync combined (what the scheduler calls) |
-| `clasp auth login` | Authenticate (GitHub OAuth or API key) |
-| `clasp auth login --provider apikey` | Authenticate with an API key instead |
+| `clasp auth login` | Authenticate (GitHub OAuth by default) |
+| `clasp auth login --provider supabase` | Authenticate via Supabase (Google sign-in) |
+| `clasp auth login --provider apikey` | Authenticate with an API key |
 | `clasp auth status` | Show current identity and auth state |
 | `clasp auth logout` | Clear stored credentials |
 | `clasp config show` | Print current configuration |
@@ -80,6 +81,7 @@ clasp install
 | `clasp uninstall` | Remove background scheduled task |
 | `clasp uninstall --purge` | Remove scheduled task and all config/data |
 | `clasp status` | Show upload watermark, pending sessions, auth state |
+| `clasp update` | Self-update to the latest version |
 | `clasp version` | Print version |
 
 ## Configuration
@@ -98,9 +100,12 @@ claude_data_dir: "~/.claude"
 
 # Authentication
 auth:
-  provider: github         # or "apikey"
+  provider: github         # or "supabase" or "apikey"
   github:
     client_id: "Iv1.abc123..."  # Your registered GitHub OAuth App
+  supabase:
+    url: "https://xxxx.supabase.co"      # Your Supabase project URL
+    anon_key: "eyJhbGci..."              # Supabase anon/public key
   apikey: {}
 
 # Privacy — control what gets sent
@@ -220,7 +225,7 @@ sync:
 
 ## Authentication
 
-CLASP supports pluggable auth providers. Two ship out of the box:
+CLASP supports pluggable auth providers. Three ship out of the box:
 
 ### GitHub OAuth (default)
 
@@ -230,6 +235,22 @@ Uses the [Device Flow](https://docs.github.com/en/apps/oauth-apps/building-oauth
 clasp auth login
 # Opens github.com/login/device — enter the displayed code
 ```
+
+### Supabase (Google sign-in)
+
+Browser-based PKCE OAuth flow via your company's Supabase project. Tokens are automatically refreshed in the background — devs only need to sign in once:
+
+```bash
+# Configure (one-time)
+clasp config set auth.supabase.url https://xxxx.supabase.co
+clasp config set auth.supabase.anon_key "eyJhbGci..."
+
+# Sign in
+clasp auth login --provider supabase
+# Opens browser → Google sign-in → redirects back to CLI
+```
+
+Token refresh is automatic: when the access token expires, CLASP silently refreshes it using the stored refresh token. Devs only need to re-authenticate if the refresh token is revoked.
 
 ### API Key
 

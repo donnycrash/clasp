@@ -152,6 +152,8 @@ func createProvider(cfg *config.Config) (auth.Provider, error) {
 		return auth.NewGitHubProvider(cfg.Auth.GitHub.ClientID, configDir), nil
 	case "apikey":
 		return auth.NewAPIKeyProvider(configDir), nil
+	case "supabase":
+		return auth.NewSupabaseProvider(cfg.Auth.Supabase.URL, cfg.Auth.Supabase.AnonKey, configDir), nil
 	default:
 		return nil, fmt.Errorf("unknown auth provider: %s", cfg.Auth.Provider)
 	}
