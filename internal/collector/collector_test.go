@@ -39,7 +39,14 @@ func setupClaudeDir(t *testing.T) string {
 		},
 		"totalSessions": 11,
 		"totalMessages": 80,
-		"hourCounts": {"9": 20, "14": 30, "16": 30}
+		"hourCounts": {"9": 20, "14": 30, "16": 30},
+		"longestSession": {
+			"sessionId": "sess-new-002",
+			"duration": 3600000,
+			"messageCount": 33,
+			"timestamp": "2026-03-20T14:00:00Z"
+		},
+		"totalSpeculationTimeSavedMs": 5000
 	}`
 	if err := os.WriteFile(filepath.Join(dir, "stats-cache.json"), []byte(statsJSON), 0o644); err != nil {
 		t.Fatal(err)
@@ -172,6 +179,27 @@ func TestCollect_FullPipeline(t *testing.T) {
 	// ModelUsage is always included in full.
 	if len(data.Stats.ModelUsage) != 1 {
 		t.Fatalf("expected 1 model usage entry, got %d", len(data.Stats.ModelUsage))
+	}
+
+	// HourCounts should be passed through.
+	if len(data.Stats.HourCounts) != 3 {
+		t.Fatalf("expected 3 hour count entries, got %d", len(data.Stats.HourCounts))
+	}
+	if data.Stats.HourCounts["14"] != 30 {
+		t.Errorf("expected hourCounts[14]=30, got %d", data.Stats.HourCounts["14"])
+	}
+
+	// LongestSession should be passed through.
+	if data.Stats.LongestSession == nil {
+		t.Fatal("expected LongestSession to be non-nil")
+	}
+	if data.Stats.LongestSession.SessionID != "sess-new-002" {
+		t.Errorf("expected LongestSession.SessionID sess-new-002, got %s", data.Stats.LongestSession.SessionID)
+	}
+
+	// TotalSpeculationTimeSavedMs should be passed through.
+	if data.Stats.TotalSpeculationTimeSavedMs != 5000 {
+		t.Errorf("expected TotalSpeculationTimeSavedMs 5000, got %d", data.Stats.TotalSpeculationTimeSavedMs)
 	}
 
 	// Sessions: sess-old-001 should be filtered out, leaving sess-new-002 and sess-new-003.
