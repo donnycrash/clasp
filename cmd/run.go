@@ -26,7 +26,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 
 	// Step 1: Upload.
 	fmt.Println("Running upload...")
-	if err := doUpload(cfg); err != nil {
+	if err := doUpload(cfg); err != nil { // no dry-run for scheduled runs
 		return fmt.Errorf("upload failed: %w", err)
 	}
 	fmt.Println("Upload complete.")

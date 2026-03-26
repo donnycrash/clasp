@@ -61,7 +61,14 @@ func TestLoadStats_Valid(t *testing.T) {
 			"10": 22,
 			"14": 18,
 			"15": 5
-		}
+		},
+		"longestSession": {
+			"sessionId": "sess-longest-001",
+			"duration": 346584386,
+			"messageCount": 653,
+			"timestamp": "2026-03-19T14:46:53.659Z"
+		},
+		"totalSpeculationTimeSavedMs": 12345
 	}`
 	if err := os.WriteFile(filepath.Join(dir, "stats-cache.json"), []byte(statsJSON), 0o644); err != nil {
 		t.Fatalf("writing stats file: %v", err)
@@ -138,6 +145,28 @@ func TestLoadStats_Valid(t *testing.T) {
 	}
 	if stats.HourCounts["10"] != 22 {
 		t.Errorf("expected hourCounts[10]=22, got %d", stats.HourCounts["10"])
+	}
+
+	// LongestSession
+	if stats.LongestSession == nil {
+		t.Fatal("expected longestSession to be non-nil")
+	}
+	if stats.LongestSession.SessionID != "sess-longest-001" {
+		t.Errorf("expected longestSession.sessionId sess-longest-001, got %s", stats.LongestSession.SessionID)
+	}
+	if stats.LongestSession.Duration != 346584386 {
+		t.Errorf("expected longestSession.duration 346584386, got %d", stats.LongestSession.Duration)
+	}
+	if stats.LongestSession.MessageCount != 653 {
+		t.Errorf("expected longestSession.messageCount 653, got %d", stats.LongestSession.MessageCount)
+	}
+	if stats.LongestSession.Timestamp != "2026-03-19T14:46:53.659Z" {
+		t.Errorf("expected longestSession.timestamp 2026-03-19T14:46:53.659Z, got %s", stats.LongestSession.Timestamp)
+	}
+
+	// TotalSpeculationTimeSavedMs
+	if stats.TotalSpeculationTimeSavedMs != 12345 {
+		t.Errorf("expected totalSpeculationTimeSavedMs 12345, got %d", stats.TotalSpeculationTimeSavedMs)
 	}
 }
 

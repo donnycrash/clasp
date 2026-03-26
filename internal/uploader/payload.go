@@ -38,11 +38,22 @@ type PayloadMetadata struct {
 
 // PayloadStats summarises aggregate usage statistics for the collection period.
 type PayloadStats struct {
-	PeriodStart      string                       `json:"period_start"`
-	PeriodEnd        string                       `json:"period_end"`
-	DailyActivity    []PayloadDailyActivity       `json:"daily_activity"`
-	DailyModelTokens []PayloadDailyModelTokens    `json:"daily_model_tokens"`
-	ModelUsage       map[string]PayloadModelUsage `json:"model_usage"`
+	PeriodStart                 string                       `json:"period_start"`
+	PeriodEnd                   string                       `json:"period_end"`
+	DailyActivity               []PayloadDailyActivity       `json:"daily_activity"`
+	DailyModelTokens            []PayloadDailyModelTokens    `json:"daily_model_tokens"`
+	ModelUsage                  map[string]PayloadModelUsage `json:"model_usage"`
+	HourCounts                  map[string]int               `json:"hour_counts,omitempty"`
+	LongestSession              *PayloadLongestSession       `json:"longest_session,omitempty"`
+	TotalSpeculationTimeSavedMs int64                        `json:"total_speculation_time_saved_ms"`
+}
+
+// PayloadLongestSession records metadata about the longest session observed.
+type PayloadLongestSession struct {
+	SessionID    string `json:"session_id"`
+	Duration     int64  `json:"duration"`
+	MessageCount int    `json:"message_count"`
+	Timestamp    string `json:"timestamp"`
 }
 
 // PayloadDailyActivity records daily aggregate counts.
@@ -175,6 +186,17 @@ func convertStats(fs *collector.FilteredStats) *PayloadStats {
 			CacheReadInputTokens:     mu.CacheReadInputTokens,
 			CacheCreationInputTokens: mu.CacheCreationInputTokens,
 			CostUSD:                  mu.CostUSD,
+		}
+	}
+
+	ps.HourCounts = fs.HourCounts
+	ps.TotalSpeculationTimeSavedMs = fs.TotalSpeculationTimeSavedMs
+	if fs.LongestSession != nil {
+		ps.LongestSession = &PayloadLongestSession{
+			SessionID:    fs.LongestSession.SessionID,
+			Duration:     fs.LongestSession.Duration,
+			MessageCount: fs.LongestSession.MessageCount,
+			Timestamp:    fs.LongestSession.Timestamp,
 		}
 	}
 

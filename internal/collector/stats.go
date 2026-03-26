@@ -11,12 +11,22 @@ import (
 // StatsCache represents the parsed contents of stats-cache.json produced by
 // Claude Code.
 type StatsCache struct {
-	DailyActivity    []DailyActivity      `json:"dailyActivity"`
-	DailyModelTokens []DailyModelTokens   `json:"dailyModelTokens"`
-	ModelUsage       map[string]ModelUsage `json:"modelUsage"`
-	TotalSessions    int                  `json:"totalSessions"`
-	TotalMessages    int                  `json:"totalMessages"`
-	HourCounts       map[string]int       `json:"hourCounts"`
+	DailyActivity               []DailyActivity      `json:"dailyActivity"`
+	DailyModelTokens            []DailyModelTokens   `json:"dailyModelTokens"`
+	ModelUsage                  map[string]ModelUsage `json:"modelUsage"`
+	TotalSessions               int                  `json:"totalSessions"`
+	TotalMessages               int                  `json:"totalMessages"`
+	HourCounts                  map[string]int       `json:"hourCounts"`
+	LongestSession              *LongestSession      `json:"longestSession,omitempty"`
+	TotalSpeculationTimeSavedMs int64                `json:"totalSpeculationTimeSavedMs"`
+}
+
+// LongestSession records metadata about the longest session observed.
+type LongestSession struct {
+	SessionID    string `json:"sessionId"`
+	Duration     int64  `json:"duration"`
+	MessageCount int    `json:"messageCount"`
+	Timestamp    string `json:"timestamp"`
 }
 
 // LoadStats reads and parses the stats-cache.json file from the given Claude

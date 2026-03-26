@@ -71,11 +71,14 @@ func filterStats(stats *StatsCache, wm *watermark.Watermark) *FilteredStats {
 	}
 
 	return &FilteredStats{
-		PeriodStart:      periodStart,
-		PeriodEnd:        periodEnd,
-		DailyActivity:    filteredActivity,
-		DailyModelTokens: filteredTokens,
-		ModelUsage:       stats.ModelUsage,
+		PeriodStart:                 periodStart,
+		PeriodEnd:                   periodEnd,
+		DailyActivity:               filteredActivity,
+		DailyModelTokens:            filteredTokens,
+		ModelUsage:                  stats.ModelUsage,
+		HourCounts:                  stats.HourCounts,
+		LongestSession:              stats.LongestSession,
+		TotalSpeculationTimeSavedMs: stats.TotalSpeculationTimeSavedMs,
 	}
 }
 

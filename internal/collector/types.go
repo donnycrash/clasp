@@ -9,11 +9,14 @@ type CollectedData struct {
 
 // FilteredStats contains aggregate usage statistics for the collection period.
 type FilteredStats struct {
-	PeriodStart      string                `json:"period_start"`
-	PeriodEnd        string                `json:"period_end"`
-	DailyActivity    []DailyActivity       `json:"daily_activity"`
-	DailyModelTokens []DailyModelTokens    `json:"daily_model_tokens"`
-	ModelUsage       map[string]ModelUsage `json:"model_usage"`
+	PeriodStart                 string                `json:"period_start"`
+	PeriodEnd                   string                `json:"period_end"`
+	DailyActivity               []DailyActivity       `json:"daily_activity"`
+	DailyModelTokens            []DailyModelTokens    `json:"daily_model_tokens"`
+	ModelUsage                  map[string]ModelUsage `json:"model_usage"`
+	HourCounts                  map[string]int        `json:"hour_counts,omitempty"`
+	LongestSession              *LongestSession       `json:"longest_session,omitempty"`
+	TotalSpeculationTimeSavedMs int64                 `json:"total_speculation_time_saved_ms"`
 }
 
 // DailyActivity records daily aggregate activity counts.

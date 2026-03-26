@@ -28,6 +28,14 @@ func TestBuildPayload_Basic(t *testing.T) {
 					CostUSD:                  0.42,
 				},
 			},
+			HourCounts: map[string]int{"9": 5, "14": 10},
+			LongestSession: &collector.LongestSession{
+				SessionID:    "sess-001",
+				Duration:     2700000,
+				MessageCount: 18,
+				Timestamp:    "2025-01-15T10:00:00Z",
+			},
+			TotalSpeculationTimeSavedMs: 7500,
 		},
 		Sessions: []collector.JoinedSession{
 			{
@@ -114,6 +122,34 @@ func TestBuildPayload_Basic(t *testing.T) {
 	mu := payload.StatsSummary.ModelUsage["claude-3"]
 	if mu.InputTokens != 500 || mu.OutputTokens != 300 || mu.CacheReadInputTokens != 100 || mu.CacheCreationInputTokens != 50 || mu.CostUSD != 0.42 {
 		t.Errorf("ModelUsage[claude-3] = %+v, unexpected values", mu)
+	}
+
+	// HourCounts
+	if len(payload.StatsSummary.HourCounts) != 2 {
+		t.Fatalf("HourCounts length = %d, want 2", len(payload.StatsSummary.HourCounts))
+	}
+	if payload.StatsSummary.HourCounts["14"] != 10 {
+		t.Errorf("HourCounts[14] = %d, want 10", payload.StatsSummary.HourCounts["14"])
+	}
+
+	// LongestSession
+	ls := payload.StatsSummary.LongestSession
+	if ls == nil {
+		t.Fatal("LongestSession should not be nil")
+	}
+	if ls.SessionID != "sess-001" {
+		t.Errorf("LongestSession.SessionID = %q, want %q", ls.SessionID, "sess-001")
+	}
+	if ls.Duration != 2700000 {
+		t.Errorf("LongestSession.Duration = %d, want 2700000", ls.Duration)
+	}
+	if ls.MessageCount != 18 {
+		t.Errorf("LongestSession.MessageCount = %d, want 18", ls.MessageCount)
+	}
+
+	// TotalSpeculationTimeSavedMs
+	if payload.StatsSummary.TotalSpeculationTimeSavedMs != 7500 {
+		t.Errorf("TotalSpeculationTimeSavedMs = %d, want 7500", payload.StatsSummary.TotalSpeculationTimeSavedMs)
 	}
 
 	// Sessions
